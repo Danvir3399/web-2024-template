@@ -10,164 +10,476 @@ import {
   ListItemText,
   ListItemSecondaryAction,
   IconButton,
-  Checkbox,
+  Card,
+  CardContent,
+  CardActions,
+  Grid,
+  Slider,
+  Box,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import RestaurantIcon from "@mui/icons-material/Restaurant";
 
-interface Todo {
+interface Ingredient {
+  name: string;
+  amount: number;
+  unit: string;
+}
+
+interface Recipe {
   id: number;
-  text: string;
-  done: boolean;
+  name: string;
+  description: string;
+  ingredients: Ingredient[];
+  instructions: string[];
+  portions: number;
 }
 
 const AppContainer = styled.div`
-  max-width: 600px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
-  text-align: center;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
+`;
+
+const StyledCard = styled(Card)`
+  && {
+    margin: 1rem;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    transition: transform 0.3s ease;
+    
+    &:hover {
+      transform: translateY(-5px);
+    }
+  }
 `;
 
 const StyledButton = styled(Button)`
   && {
-    margin-top: 1rem;
+    margin: 0.5rem;
+    background: linear-gradient(45deg, #2196F3 30%, #21CBF3 90%);
+    border: 0;
+    color: white;
+    box-shadow: 0 3px 5px 2px rgba(33, 203, 243, .3);
   }
 `;
 
-const StyledListItemText = styled(ListItemText)<{ done: boolean }>`
+const Title = styled(Typography)`
   && {
-    text-decoration: ${(props) => (props.done ? "line-through" : "none")};
+    color: #2c3e50;
+    text-align: center;
+    margin-bottom: 2rem;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
   }
 `;
 
 function App() {
-  const [todos, setTodos] = useLocalStorageState<Todo[]>("todos", {
+  const [recipes, setRecipes] = useLocalStorageState<Recipe[]>("recipes", {
     defaultValue: [],
   });
-  const [newTodo, setNewTodo] = useState("");
+  const [newRecipe, setNewRecipe] = useState<Omit<Recipe, 'id'>>({
+    name: "",
+    description: "",
+    ingredients: [{ name: "", amount: 0, unit: "" }],
+    instructions: [""],
+    portions: 1,
+  });
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [editText, setEditText] = useState(""); // Add this line
 
   useEffect(() => {
-    if (todos.length === 0) {
-      const boilerplateTodos = [
-        { id: 1, text: "Install Node.js", done: false },
-        { id: 2, text: "Install Cursor IDE", done: false },
-        { id: 3, text: "Log into Github", done: false },
-        { id: 4, text: "Fork a repo", done: false },
-        { id: 5, text: "Make changes", done: false },
-        { id: 6, text: "Commit", done: false },
-        { id: 7, text: "Deploy", done: false },
+    if (recipes.length === 0) {
+      const boilerplateRecipes: Recipe[] = [
+        {
+          id: 1,
+          name: "Паста Карбонара",
+          description: "Классическая итальянская паста с беконом и яйцами",
+          ingredients: [
+            { name: "Спагетти", amount: 200, unit: "г" },
+            { name: "Бекон", amount: 100, unit: "г" },
+            { name: "Яйца", amount: 2, unit: "шт" },
+            { name: "Пармезан", amount: 50, unit: "г" },
+          ],
+          instructions: [
+            "Отварить пасту",
+            "Обжарить бекон",
+            "Смешать яйца с сыром",
+            "Соединить все ингредиенты",
+          ],
+          portions: 2,
+        },
+        {
+          id: 2,
+          name: "Омлет",
+          description: "Простой и вкусный завтрак",
+          ingredients: [
+            { name: "Яйца", amount: 3, unit: "шт" },
+            { name: "Молоко", amount: 50, unit: "мл" },
+            { name: "Соль", amount: 1, unit: "щепотка" },
+          ],
+          instructions: [
+            "Взбить яйца с молоком",
+            "Добавить соль",
+            "Жарить на сковороде",
+          ],
+          portions: 1,
+        },
+        {
+          id: 3,
+          name: "Салат Цезарь",
+          description: "Классический салат с курицей и сухариками",
+          ingredients: [
+            { name: "Куриная грудка", amount: 200, unit: "г" },
+            { name: "Листья салата", amount: 100, unit: "г" },
+            { name: "Сухарики", amount: 50, unit: "г" },
+            { name: "Пармезан", amount: 30, unit: "г" },
+          ],
+          instructions: [
+            "Обжарить курицу",
+            "Порвать салат",
+            "Смешать все ингредиенты",
+            "Добавить соус",
+          ],
+          portions: 2,
+        },
+        {
+          id: 4,
+          name: "Борщ",
+          description: "Традиционный украинский суп",
+          ingredients: [
+            { name: "Свекла", amount: 2, unit: "шт" },
+            { name: "Картофель", amount: 3, unit: "шт" },
+            { name: "Капуста", amount: 200, unit: "г" },
+            { name: "Мясо", amount: 300, unit: "г" },
+          ],
+          instructions: [
+            "Сварить бульон",
+            "Добавить овощи",
+            "Варить до готовности",
+            "Добавить зелень",
+          ],
+          portions: 4,
+        },
+        {
+          id: 5,
+          name: "Шоколадный торт",
+          description: "Нежный шоколадный десерт",
+          ingredients: [
+            { name: "Мука", amount: 200, unit: "г" },
+            { name: "Сахар", amount: 200, unit: "г" },
+            { name: "Какао", amount: 50, unit: "г" },
+            { name: "Яйца", amount: 4, unit: "шт" },
+          ],
+          instructions: [
+            "Смешать сухие ингредиенты",
+            "Добавить яйца",
+            "Выпекать 30 минут",
+            "Украсить кремом",
+          ],
+          portions: 8,
+        },
       ];
-      setTodos(boilerplateTodos);
+      setRecipes(boilerplateRecipes);
     }
-  }, [todos, setTodos]);
+  }, [recipes, setRecipes]);
 
-  const handleAddTodo = () => {
-    if (newTodo.trim() !== "") {
-      setTodos([
-        ...todos,
-        { id: Date.now(), text: newTodo.trim(), done: false },
-      ]);
-      setNewTodo("");
+  const handleAddRecipe = () => {
+    if (newRecipe.name && newRecipe.description) {
+      const recipe: Recipe = {
+        id: Date.now(),
+        ...newRecipe
+      };
+      setRecipes([...recipes, recipe]);
+      setNewRecipe({
+        name: "",
+        description: "",
+        ingredients: [{ name: "", amount: 0, unit: "" }],
+        instructions: [""],
+        portions: 1,
+      });
     }
   };
 
-  const handleDeleteTodo = (id: number) => {
-    setTodos(todos.filter((todo) => todo.id !== id));
+  const handleDeleteRecipe = (id: number) => {
+    setRecipes(recipes.filter((recipe) => recipe.id !== id));
   };
 
-  const handleToggleTodo = (id: number) => {
-    setTodos(
-      todos.map((todo) =>
-        todo.id === id ? { ...todo, done: !todo.done } : todo
+  const handleEditRecipe = (id: number) => {
+    setEditingId(id);
+    const recipeToEdit = recipes.find((recipe) => recipe.id === id);
+    if (recipeToEdit) {
+      setNewRecipe(recipeToEdit);
+    }
+  };
+
+  const handleUpdateRecipe = (id: number) => {
+    if (newRecipe.name && newRecipe.description) {
+      setRecipes(
+        recipes.map((recipe) =>
+          recipe.id === id
+            ? {
+              ...recipe,
+              name: newRecipe.name,
+              description: newRecipe.description,
+              ingredients: newRecipe.ingredients || [],
+              instructions: newRecipe.instructions || [],
+              portions: newRecipe.portions || 1,
+            }
+            : recipe
+        )
+      );
+      setEditingId(null);
+      setNewRecipe({
+        name: "",
+        description: "",
+        ingredients: [{ name: "", amount: 0, unit: "" }],
+        instructions: [""],
+        portions: 1,
+      });
+    }
+  };
+
+  const handlePortionChange = (id: number, newPortions: number) => {
+    setRecipes(
+      recipes.map((recipe) =>
+        recipe.id === id
+          ? {
+            ...recipe,
+            portions: newPortions,
+            ingredients: recipe.ingredients.map((ingredient) => ({
+              ...ingredient,
+              amount: (ingredient.amount * newPortions) / recipe.portions,
+            })),
+          }
+          : recipe
       )
     );
   };
 
-  const handleEditTodo = (id: number) => {
-    setEditingId(id);
-    const todoToEdit = todos.find((todo) => todo.id === id);
-    if (todoToEdit) {
-      setEditText(todoToEdit.text);
-    }
-  };
-
-  const handleUpdateTodo = (id: number) => {
-    if (editText.trim() !== "") {
-      setTodos(
-        todos.map((todo) =>
-          todo.id === id ? { ...todo, text: editText.trim() } : todo
-        )
-      );
-    }
-    setEditingId(null);
-    setEditText("");
-  };
-
   return (
     <AppContainer>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Todo List
+      <Typography variant="h3" sx={{ textAlign: 'center', mb: 2 }}>
+        <RestaurantIcon sx={{ fontSize: 40, mr: 1 }} />
+        Моя Кулинарная Книга
       </Typography>
-      <TextField
-        fullWidth
-        variant="outlined"
-        label="New Todo"
-        value={newTodo}
-        onChange={(e) => setNewTodo(e.target.value)}
-        onKeyPress={(e) => e.key === "Enter" && handleAddTodo()}
-        autoFocus // Add this line to enable autofocus
-      />
-      <StyledButton
-        variant="contained"
-        color="primary"
-        fullWidth
-        onClick={handleAddTodo}
-      >
-        Add Todo
-      </StyledButton>
-      <List>
-        {todos.map((todo) => (
-          <ListItem key={todo.id} dense>
-            <Checkbox
-              edge="start"
-              checked={todo.done}
-              onChange={() => handleToggleTodo(todo.id)}
-            />
-            {editingId === todo.id ? (
+
+      <Card sx={{ mb: 4, p: 2, background: 'rgba(255, 255, 255, 0.9)' }}>
+        <CardContent>
+          <Typography variant="h5" gutterBottom>Добавить новый рецепт</Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
               <TextField
                 fullWidth
-                value={editText}
-                onChange={(e) => setEditText(e.target.value)}
-                onBlur={() => handleUpdateTodo(todo.id)}
-                onKeyPress={(e) =>
-                  e.key === "Enter" && handleUpdateTodo(todo.id)
-                }
-                autoFocus
+                label="Название блюда"
+                value={newRecipe.name}
+                onChange={(e) => setNewRecipe({ ...newRecipe, name: e.target.value })}
               />
-            ) : (
-              <StyledListItemText primary={todo.text} done={todo.done} />
-            )}
-            <ListItemSecondaryAction>
-              <IconButton
-                edge="end"
-                aria-label="edit"
-                onClick={() => handleEditTodo(todo.id)}
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Описание"
+                multiline
+                rows={2}
+                value={newRecipe.description}
+                onChange={(e) => setNewRecipe({ ...newRecipe, description: e.target.value })}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="subtitle1" gutterBottom>Ингредиенты:</Typography>
+              {newRecipe.ingredients.map((ingredient, index) => (
+                <Grid container spacing={2} key={index} sx={{ mb: 1 }}>
+                  <Grid item xs={5}>
+                    <TextField
+                      fullWidth
+                      label="Название"
+                      value={ingredient.name}
+                      onChange={(e) => {
+                        const newIngredients = [...newRecipe.ingredients];
+                        newIngredients[index] = { ...ingredient, name: e.target.value };
+                        setNewRecipe({ ...newRecipe, ingredients: newIngredients });
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={3}>
+                    <TextField
+                      fullWidth
+                      label="Количество"
+                      type="number"
+                      value={ingredient.amount}
+                      onChange={(e) => {
+                        const newIngredients = [...newRecipe.ingredients];
+                        newIngredients[index] = { ...ingredient, amount: Number(e.target.value) };
+                        setNewRecipe({ ...newRecipe, ingredients: newIngredients });
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={3}>
+                    <TextField
+                      fullWidth
+                      label="Единица измерения"
+                      value={ingredient.unit}
+                      onChange={(e) => {
+                        const newIngredients = [...newRecipe.ingredients];
+                        newIngredients[index] = { ...ingredient, unit: e.target.value };
+                        setNewRecipe({ ...newRecipe, ingredients: newIngredients });
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={1}>
+                    <IconButton
+                      onClick={() => {
+                        const newIngredients = newRecipe.ingredients.filter((_, i) => i !== index);
+                        setNewRecipe({ ...newRecipe, ingredients: newIngredients });
+                      }}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Grid>
+                </Grid>
+              ))}
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  setNewRecipe({
+                    ...newRecipe,
+                    ingredients: [...newRecipe.ingredients, { name: "", amount: 0, unit: "" }],
+                  });
+                }}
+                sx={{ mt: 1 }}
               >
-                <EditIcon />
-              </IconButton>
-              <IconButton
-                edge="end"
-                aria-label="delete"
-                onClick={() => handleDeleteTodo(todo.id)}
+                Добавить ингредиент
+              </Button>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="subtitle1" gutterBottom>Инструкции:</Typography>
+              {newRecipe.instructions.map((instruction, index) => (
+                <Grid container spacing={2} key={index} sx={{ mb: 1 }}>
+                  <Grid item xs={11}>
+                    <TextField
+                      fullWidth
+                      label={`Шаг ${index + 1}`}
+                      value={instruction}
+                      onChange={(e) => {
+                        const newInstructions = [...newRecipe.instructions];
+                        newInstructions[index] = e.target.value;
+                        setNewRecipe({ ...newRecipe, instructions: newInstructions });
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={1}>
+                    <IconButton
+                      onClick={() => {
+                        const newInstructions = newRecipe.instructions.filter((_, i) => i !== index);
+                        setNewRecipe({ ...newRecipe, instructions: newInstructions });
+                      }}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Grid>
+                </Grid>
+              ))}
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  setNewRecipe({
+                    ...newRecipe,
+                    instructions: [...newRecipe.instructions, ""],
+                  });
+                }}
+                sx={{ mt: 1 }}
               >
-                <DeleteIcon />
-              </IconButton>
-            </ListItemSecondaryAction>
-          </ListItem>
+                Добавить шаг
+              </Button>
+            </Grid>
+            <Grid item xs={12}>
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleAddRecipe}
+                  disabled={!newRecipe.name || !newRecipe.description}
+                >
+                  Добавить рецепт
+                </Button>
+              </Box>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+
+      <Grid container spacing={3}>
+        {recipes.map((recipe) => (
+          <Grid item xs={12} sm={6} md={4} key={recipe.id}>
+            <StyledCard>
+              <CardContent>
+                <Typography variant="h5" component="h2" gutterBottom>
+                  {recipe.name}
+                </Typography>
+                <Typography color="textSecondary" gutterBottom>
+                  {recipe.description}
+                </Typography>
+                <Typography variant="h6" gutterBottom>
+                  Ингредиенты:
+                </Typography>
+                <List>
+                  {recipe.ingredients.map((ingredient, index) => (
+                    <ListItem key={index}>
+                      <ListItemText
+                        primary={`${ingredient.name}: ${ingredient.amount} ${ingredient.unit}`}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+                <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+                  Инструкции:
+                </Typography>
+                <List>
+                  {recipe.instructions.map((instruction, index) => (
+                    <ListItem key={index}>
+                      <ListItemText
+                        primary={`${index + 1}. ${instruction}`}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+                <Box sx={{ mt: 2 }}>
+                  <Typography gutterBottom>Количество порций:</Typography>
+                  <Slider
+                    value={recipe.portions}
+                    onChange={(_, value) => handlePortionChange(recipe.id, value as number)}
+                    min={1}
+                    max={10}
+                    step={1}
+                    marks
+                  />
+                </Box>
+              </CardContent>
+              <CardActions>
+                <IconButton
+                  edge="end"
+                  aria-label="edit"
+                  onClick={() => handleEditRecipe(recipe.id)}
+                >
+                  <EditIcon />
+                </IconButton>
+                <IconButton
+                  edge="end"
+                  aria-label="delete"
+                  onClick={() => handleDeleteRecipe(recipe.id)}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </CardActions>
+            </StyledCard>
+          </Grid>
         ))}
-      </List>
+      </Grid>
     </AppContainer>
   );
 }
